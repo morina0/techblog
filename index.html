@@ -13,12 +13,12 @@
             <h1>Malware Analysis Lab</h1>
             <h3>Yll Morina</h3>
             <h3>01/27/2026</h3>
-
+            <br>
             <p>This blog will showcase step by step the first assignment for the Reverse Engineering Fundamentals class at RIT Kosovo taught by Prof. Robert Shala.</p>
             </div>
-
-            <div class="post-content">
-
+            <br>
+<div class="post-content">
+    
     <h2>Requirements In Short Terms</h2>
     <p>
         Build an isolated Malware Analysis Lab with two VMs. A Windows 11 Victim machine and a REMnux Observer machine.
@@ -29,12 +29,14 @@
 
     <h2>Windows 11 Victim Machine Setup</h2>
     <p>
-        A Windows 11 VM was created in VirtualBox using the official ISO file. After installation, all security
+        A Windows 11 VM was created in VirtualBox using the official ISO file.
+    </p>
+    <img src="Images for Report/Screenshot 2026-01-26 103338.png">
+    <p>After installation, all security
         features were disabled to allow malware execution without interference. Windows Defender real time protection,
         firewall, proxy settings, and cloud protection were disabled. Additional restrictions were removed using
         Registry Editor and Local Group Policy Editor to fully neutralize built in defenses.
     </p>
-    <img src="Images for Report/Screenshot 2026-01-26 103338.png">
     <img src="Images for Report/Screenshot 2026-01-27 001506.png">
     <img src="Images for Report/Screenshot 2026-01-27 002525.png">
     <p>
@@ -68,13 +70,13 @@
         the system was updated and INetSim was installed and tested using root privileges.
         INetSim services were verified to ensure DNS and HTTP emulation worked correctly.
     </p>
-
+    <img src="Images for Report/REMnuxNetwork.png">  
     <p>
         The REMnux VM was then powered off and configured with the same Internal Network name malware-lab
         and Promiscuous mode set to Allow VMs to match the Windows machine.
     </p>
 
-    <img src="Images for Report/REMnuxNetwork.png">                
+              
                 
 
     <h2>Static IP Address Configuration</h2>
@@ -140,6 +142,7 @@
     </footer>
 </body>
 </html>
+
 
 
 
