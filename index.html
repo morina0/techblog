@@ -3,110 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Malware Lab - Technical Blog</title>
+    <title>Malware Analysis Lab</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <h1>Tech Chronicles</h1>
-            <p class="tagline">Deep Dive into Security Research</p>
-        </div>
-    </header>
-
-    <nav class="navbar">
-        <div class="container">
-            <ul class="nav-menu">
-                <li><a href="#home">Home</a></li>
-                <li><a href="#blog">Blog</a></li>
-                <li><a href="#research">Research</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </div>
-    </nav>
-
     <main class="container">
         <article class="blog-post">
             <div class="post-header">
-                <h1>Malware Lab</h1>
-                <div class="post-meta">
-                    <span class="author">By Sarah Johnson</span>
-                    <span class="date">January 27, 2026</span>
-                    <span class="reading-time">8 min read</span>
-                </div>
             </div>
 
             <div class="post-content">
-                <img src="https://picsum.photos/800/400?random=1" alt="Malware analysis setup" class="featured-image">
+    <img src="https://picsum.photos/800/400?random=1" alt="Isolated malware lab setup" class="featured-image">
 
-                <p>The landscape of cybersecurity threats continues to evolve at an unprecedented pace. Malware, the umbrella term for malicious software, represents one of the most persistent and dangerous challenges facing organizations worldwide. In this comprehensive exploration, we delve into the world of malware analysis, examining the techniques, tools, and methodologies that security researchers employ to understand and combat these digital threats.</p>
+    <h2>Requirements In Short Terms</h2>
+    <p>
+        Build an isolated Malware Analysis Lab with two VMs. A Windows 11 Victim machine and a REMnux Observer machine.
+        The VirtualBox environment must be fully isolated. No NAT, no Bridge, no Internet.
+        Windows 11 must be able to execute malware, believe it is online, and stay clean using snapshots.
+        REMnux must provide fake DNS and HTTP services, traffic logging, and packet capture using INetSim.
+    </p>
 
-                <p>Malware encompasses a diverse range of software types, each designed with specific malicious intent. Viruses, trojans, ransomware, and worms are just a few examples of the varieties that threaten our digital infrastructure. The sophistication of modern malware has reached new heights, with developers employing advanced obfuscation techniques and polymorphic behaviors to evade detection systems.</p>
+    <img src="https://picsum.photos/800/400?random=2" alt="Windows 11 virtual machine">
 
-                <img src="https://picsum.photos/800/400?random=2" alt="Code analysis visualization">
+    <h2>Windows 11 Victim Machine Setup</h2>
+    <p>
+        A Windows 11 VM was created in VirtualBox using the official ISO file. After installation, all security
+        features were disabled to allow malware execution without interference. Windows Defender real time protection,
+        firewall, proxy settings, and cloud protection were disabled. Additional restrictions were removed using
+        Registry Editor and Local Group Policy Editor to fully neutralize built in defenses.
+    </p>
 
-                <p>Understanding the anatomy of malware is the first step in effective defense. When researchers examine a suspicious binary, they employ both static and dynamic analysis techniques. Static analysis involves examining the code without execution, looking for patterns and signatures that indicate malicious behavior. This approach provides insights into the malware's structure and capabilities without the risk of activation.</p>
+    <p>
+        The system was kept fully isolated and no Microsoft account or online services were used. A clean snapshot
+        was taken after setup to allow safe rollback after malware execution.
+    </p>
 
-                <p>Dynamic analysis, conversely, involves executing the malware in a controlled environment. Isolated virtual machines and sandboxes provide safe spaces for researchers to observe how malware behaves when it runs. Through careful monitoring of system calls, network traffic, and file operations, analysts can reconstruct the malware's intended functionality and identify its targets.</p>
+    <img src="https://picsum.photos/800/400?random=3" alt="Malware analysis tools">
 
-                <img src="https://picsum.photos/800/400?random=3" alt="Network traffic monitoring">
+    <h2>Tools Installed on Windows 11</h2>
+    <p>
+        Multiple malware analysis tools were installed to support both static and dynamic analysis.
+        These included strings and FLOSS for string extraction, PEView and PEBear for PE structure analysis,
+        PEStudio and capa for capability discovery, Cutter and x32 x64dbg for reverse engineering,
+        dnSpyEx for .NET analysis, scdbg for shellcode debugging, Process Hacker for process inspection,
+        Sysinternals tools such as Procmon and TCPView, Wireshark for packet capture, nc ncat for network testing,
+        YARA for rule matching, and UPX referenced for packed samples.
+    </p>
 
-                <p>One of the most prevalent malware families in recent years is ransomware. These programs encrypt a victim's data and demand payment for decryption keys. Notable examples include WannaCry, NotPetya, and REvil, which have collectively caused billions of dollars in damage globally. The sophistication of modern ransomware extends beyond simple encryption, often incorporating data exfiltration to compound the threat.</p>
+    <img src="https://picsum.photos/800/400?random=4" alt="VirtualBox network isolation">
 
-                <p>The tools available to malware researchers have become increasingly sophisticated. Disassemblers like IDA Pro and Ghidra allow analysts to reverse engineer binaries into human-readable assembly code. Debuggers enable step-by-step execution and variable inspection. Memory forensics tools help uncover artifacts left behind after malware execution. The combination of these tools creates a powerful arsenal for understanding malicious code.</p>
+    <h2>Network Isolation Configuration</h2>
+    <p>
+        After installing all tools, the Windows 11 VM was powered off. In VirtualBox network settings,
+        the adapter was changed to Internal Network and named malware-lab. Promiscuous mode was set to
+        Allow VMs. This ensures communication only between lab machines with no external access.
+    </p>
 
-                <img src="https://picsum.photos/800/400?random=4" alt="Malware classification system">
+    <img src="https://picsum.photos/800/400?random=5" alt="REMnux virtual machine">
 
-                <p>Attack vectors have multiplied with the proliferation of technology. Phishing emails remain a favorite entry point for malware distribution, exploiting human psychology rather than technical vulnerabilities. Malicious attachments, infected websites, and compromised software repositories all serve as delivery mechanisms. Understanding these attack vectors is crucial for implementing effective defensive strategies.</p>
+    <h2>REMnux Observer Machine Setup</h2>
+    <p>
+        The REMnux OVA was imported into VirtualBox and named REMnuxObserver. After booting,
+        the system was updated and INetSim was installed and tested using root privileges.
+        INetSim services were verified to ensure DNS and HTTP emulation worked correctly.
+    </p>
 
-                <p>The journey of malware through a system follows recognizable patterns. Initial infection is typically followed by persistence mechanisms that ensure the malware survives system reboots. Lateral movement across networks allows the malware to spread to other machines. Command and control communications establish channels for the attacker to issue commands and exfiltrate data. Each stage presents opportunities for detection and containment.</p>
+    <p>
+        The REMnux VM was then powered off and configured with the same Internal Network name malware-lab
+        and Promiscuous mode set to Allow VMs to match the Windows machine.
+    </p>
 
-                <img src="https://picsum.photos/800/400?random=5" alt="System infection timeline">
+    <img src="https://picsum.photos/800/400?random=6" alt="IP configuration">
 
-                <p>Machine learning and artificial intelligence are revolutionizing malware detection. Behavioral analysis algorithms can identify suspicious patterns without relying on known signatures. These approaches show promise in detecting zero-day exploits, malware variants that have never been seen before. However, the arms race between defenders and attackers continues, with adversaries developing techniques to fool machine learning models.</p>
+    <h2>Static IP Address Configuration</h2>
+    <p>
+        After powering on REMnux, the network interface name was identified using ip show link.
+        A static IP address was assigned using the command
+        sudo ip addr add 10.0.0.1/24 dev enp0s3.
+        The IP assignment was verified using ip show.
+    </p>
 
-                <img src="https://picsum.photos/800/400?random=6" alt="AI detection algorithms">
+    <p>
+        On Windows 11, Ethernet settings were changed from automatic to manual.
+        IPv4 was configured with IP address 10.0.0.2, subnet mask 255.255.255.0,
+        gateway 10.0.0.1, and DNS 10.0.0.1 to route all traffic through REMnux.
+    </p>
 
-                <p>Incident response following a malware infection requires meticulous planning and execution. Immediate containment prevents further spread, while preservation of evidence supports investigation and potential legal action. Post-incident analysis provides valuable intelligence for future defense improvements. Organizations must develop comprehensive incident response plans before a breach occurs.</p>
+    <img src="https://picsum.photos/800/400?random=7" alt="INetSim running">
 
-                <img src="https://picsum.photos/800/400?random=7" alt="Incident response flowchart">
+    <h2>INetSim and Connectivity Verification</h2>
+    <p>
+        Both machines were restarted to apply network changes. INetSim was started on REMnux
+        using sudo inetsim. Once services were running, connectivity was tested from Windows
+        by pinging 10.0.0.1. The successful response confirmed proper communication between
+        the victim and observer machines.
+    </p>
 
-                <p>The role of threat intelligence in modern defense cannot be overstated. Sharing information about malware samples, attack patterns, and threat actors across the security community strengthens collective defenses. Platforms and organizations dedicated to threat sharing have become essential infrastructure in the fight against cybercrime. Real-time information about emerging threats enables faster response times.</p>
+    <p>
+        At this stage, the malware lab was fully operational. The environment had no WiFi,
+        no NAT, no external network access, and all traffic from Windows was redirected
+        to REMnux for monitoring and logging.
+    </p>
 
-                <p>Emerging technologies like containerization and cloud computing have introduced new attack surfaces. Malware adapted for container environments can spread rapidly across orchestrated systems. Cloud-based malware-as-a-service platforms lower the barrier to entry for would-be attackers. Security architects must design defenses that account for these modern deployment paradigms.</p>
+    <img src="https://picsum.photos/800/400?random=8" alt="Malware lab complete">
 
-                <img src="https://picsum.photos/800/400?random=8" alt="Cloud security architecture">
-
-                <p>Cryptographic analysis plays an important role in malware research. Understanding the encryption schemes employed by malware helps analysts develop decryption strategies. Key extraction from memory dumps can unlock encrypted files or communications. However, the increasing use of strong cryptography by malware developers presents new challenges for forensic analysis.</p>
-
-                <img src="https://picsum.photos/800/400?random=9" alt="Cryptographic analysis tools">
-
-                <p>The human element remains critical in both attack and defense. Social engineering tailored to specific targets increases infection rates dramatically. Conversely, security awareness training empowers users to recognize and report suspicious activity. Building a security-conscious culture within organizations is as important as deploying technical controls.</p>
-
-                <img src="https://picsum.photos/800/400?random=10" alt="Security awareness training">
-
-                <p>Malware samples are carefully preserved and cataloged in online repositories and private collections. These databases serve as reference libraries for researchers and security vendors. Collaborative platforms allow researchers from different organizations to contribute analysis and insights. The collective knowledge accumulated through these efforts accelerates the discovery of new malware families and their relationships.</p>
-
-                <img src="https://picsum.photos/800/400?random=11" alt="Malware sample repository">
-
-                <p>Geographic and temporal patterns in malware distribution reveal interesting insights about attacker motivations and capabilities. Certain malware families target specific regions or industries, suggesting focused threat actors. Seasonal variations in attack frequency correlate with financial calendars and holiday periods. These patterns inform threat modeling and resource allocation decisions.</p>
-
-                <img src="https://picsum.photos/800/400?random=12" alt="Geographic threat distribution">
-
-                <p>The legal and ethical dimensions of malware research require careful consideration. Conducting research on malware demands proper authorization and secure facilities. Publishing research findings must balance the need to advance security knowledge with avoiding providing actionable exploits to criminals. Professional codes of conduct guide researchers in navigating these complex issues.</p>
-
-                <img src="https://picsum.photos/800/400?random=13" alt="Security research ethics">
-
-                <p>Automation in malware analysis has become essential given the volume of new samples discovered daily. Automated sandboxes process thousands of samples, generating reports and insights with minimal human intervention. Machine learning models trained on historical data can prioritize high-risk samples for deeper analysis. These systems free researchers to focus on complex, novel threats.</p>
-
-                <img src="https://picsum.photos/800/400?random=14" alt="Automated analysis pipeline">
-
-                <p>The future of malware defense lies in proactive threat hunting and advanced analytical capabilities. Rather than waiting for malware to strike, security teams actively search for indicators of compromise within their networks. Behavioral analytics continuously monitor systems for anomalous activities. These approaches shift the advantage toward defenders by enabling earlier detection and response.</p>
-
-                <img src="https://picsum.photos/800/400?random=15" alt="Future of threat hunting">
-
-                <p>As we face increasingly sophisticated malware threats, the importance of research, education, and collaboration cannot be understated. The security community must continue advancing detection and analysis capabilities while sharing knowledge freely. Organizations must invest in trained personnel and modern tools to defend their infrastructure. Only through collective effort can we hope to stay ahead of adversaries in this endless digital arms race.</p>
-            </div>
+    <h2>Conclusion</h2>
+    <p>
+        A complete isolated malware analysis lab was successfully built using VirtualBox,
+        Windows 11, and REMnux. The setup allows safe execution and observation of malware
+        without risk to the host system or external networks. With proper tooling, network
+        emulation, and traffic analysis in place, the lab is ready for static and dynamic
+        malware analysis exercises.
+    </p>
+</div>
 
             <footer class="post-footer">
                 <div class="tags">
@@ -123,8 +132,9 @@
 
     <footer class="site-footer">
         <div class="container">
-            <p>&copy; 2026 Tech Chronicles. All rights reserved.</p>
+            <p>&copy; 2026 Yll Morina. All rights reserved.</p>
         </div>
     </footer>
 </body>
 </html>
+
