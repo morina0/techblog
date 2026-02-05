@@ -15,7 +15,8 @@
         <h3>02/05/2026</h3>
         <p>
           This report shows the steps I used to analyze a malware sample linked to attacks on Ukrainian organizations in 2022.
-          I focused on static analysis and used public research to confirm what the malware is.
+          I focused on static analysis (I did not execute the malware). When my tools could not fully explain the sample,
+          I used public threat intelligence to confirm what it is and why it matters.
         </p>
         <p class="top-nav">
           <a href="index.html">← Back to Home</a>
@@ -24,17 +25,45 @@
 
       <div class="post-content">
 
-        <h2>1. Sample Information</h2>
+        <h2 id="toc">Table of Contents</h2>
+        <ul class="toc">
+          <li><a href="#scope">1. Scope and Safety</a></li>
+          <li><a href="#sample">2. Sample Information and Hashes</a></li>
+          <li><a href="#vt">3. VirusTotal Check</a></li>
+          <li><a href="#filetype">4. File Type and Basic Details (DIE)</a></li>
+          <li><a href="#sections">5. Sections and Packing Signs</a></li>
+          <li><a href="#imports">6. Imports and Why They Look Wrong</a></li>
+          <li><a href="#floss">7. I Tried FLOSS and What the Error Means</a></li>
+          <li><a href="#strings">8. PEStudio Strings and What Stood Out</a></li>
+          <li><a href="#cert">9. Certificate / Signature Observations</a></li>
+          <li><a href="#cisa">10. Correlating With Public Research (CISA)</a></li>
+          <li><a href="#conclusion">11. Conclusion</a></li>
+          <li><a href="#sources">12. Sources</a></li>
+        </ul>
+
+        <h2 id="scope">1. Scope and Safety</h2>
+        <p>
+          I did this analysis using a safe lab environment and focused only on static analysis.
+          I did not run the malware. I chose static analysis first because it lets me learn about the file structure,
+          packing signs, strings, and metadata without giving the malware a chance to execute.
+        </p>
+
+        <h2 id="sample">2. Sample Information and Hashes</h2>
         <p>
           I started by opening the file in PE-bear to collect the hashes and confirm the file identity.
+          The reason I do this first is because hashes are like fingerprints: they let me verify I’m analyzing the exact same file
+          when I check it in VirusTotal or compare it to public reports.
         </p>
         <p><strong>SHA-256:</strong> a64c3e0522fad787b95bfb6a30c3aed1b5786e69e88e023c062ec7e5cebf4d3e</p>
 
         <img src="images/report2/Screenshot 2026-02-05 131624.png" alt="PE-bear file info">
 
-        <h2>2. VirusTotal Check</h2>
+        <h2 id="vt">3. VirusTotal Check</h2>
         <p>
-          Next, I searched the SHA-256 hash in VirusTotal to confirm if it is already known and how many engines detect it.
+          Next, I searched the SHA-256 hash in VirusTotal.
+          I did this because VirusTotal helps answer two important questions early:
+          (1) Is this sample already known and detected by many vendors?
+          (2) Are there tags or names that point to a malware family?
         </p>
         <p>
           VirusTotal Link:
@@ -42,60 +71,94 @@
             View Detection Page
           </a>
         </p>
-
-        <h2>3. File Type and Basic Details</h2>
         <p>
-          I used Detect It Easy (DIE). It showed the sample is a PE32 file (32-bit, x86) and looks like it was built
-          to be compatible with Windows XP. This usually means it can also run on newer Windows versions.
+          From VirusTotal, I could confirm it is widely detected. However, detection names can differ between vendors,
+          so I treated VirusTotal as an “early signal” and continued with my own static checks.
+        </p>
+
+        <h2 id="filetype">4. File Type and Basic Details (DIE)</h2>
+        <p>
+          I used Detect It Easy (DIE) to check the file type, architecture, and compiler hints.
+          This matters because knowing if a file is 32-bit or 64-bit helps decide what tools to use (x32dbg vs x64dbg),
+          and it also helps understand compatibility.
+        </p>
+        <p>
+          DIE showed the sample is a PE32 file (32-bit, x86) and looks like it was built to be compatible with Windows XP.
+          My reasoning here is that “Windows XP” in tools often means the malware was compiled with older settings for broad compatibility.
+          That does not mean it only runs on XP.
         </p>
 
         <img src="images/report2/Screenshot 2026-02-05 132859.png" alt="Detect It Easy output">
 
-        <h2>4. Sections and Packing Signs</h2>
+        <h2 id="sections">5. Sections and Packing Signs</h2>
         <p>
-          I checked the PE sections and looked at entropy. Some sections had high entropy, which usually means the file is packed
-          or encrypted. This is a common malware trick to hide the real code.
+          After file identification, I checked sections and entropy.
+          I did this because packed malware often shows high entropy in some sections (meaning the bytes look random).
+          Random-looking data often means compression or encryption, which is a common way malware hides its real code.
+        </p>
+        <p>
+          In my results, some sections looked normal, while others looked highly packed. This was my first strong hint
+          that the sample is not “plain code” and may unpack itself at runtime.
         </p>
 
         <img src="images/report2/Screenshot 2026-02-05 144805.png" alt="Entropy / packed sections">
 
-        <h2>5. Imports Look Obfuscated</h2>
+        <h2 id="imports">6. Imports and Why They Look Wrong</h2>
         <p>
-          Imports did not look normal. They seemed missing or malformed (spoofed imports). That suggests the malware probably loads
-          Windows APIs at runtime instead of listing them normally. This makes analysis harder.
+          I reviewed imports because imports usually tell you which Windows APIs a program uses (file access, networking, registry, etc.).
+          In this sample, imports did not look normal: they appeared missing, malformed, or spoofed.
+        </p>
+        <p>
+          My conclusion from this was: the malware likely avoids a clean import table and instead resolves APIs at runtime
+          (for example using LoadLibrary/GetProcAddress patterns). Malware does this to make analysis harder and to reduce obvious indicators.
         </p>
 
-        <img src="images/report2/Screenshot 2026-02-05 143045.png" alt="PEStudio strings and structure">
+        <img src="images/report2/Screenshot 2026-02-05 143045.png" alt="PEStudio structure / import observations">
 
-        <h2>6. I Tried FLOSS (Strings) But It Failed</h2>
+        <h2 id="floss">7. I Tried FLOSS and What the Error Means</h2>
         <p>
-          I tried running FLOSS on the sample in normal mode and also with verbose options.
-          Every time it crashed with a UnicodeDecodeError. That’s another sign the file is packed or intentionally malformed.
+          At this stage I wanted decoded strings, so I tried FLOSS.
+          I tried running it normally and also with verbose modes to get more detail.
+        </p>
+        <p>
+          FLOSS crashed with a UnicodeDecodeError. My reasoning is that this happens when a tool expects readable text at some location
+          but the sample contains packed/encrypted bytes or malformed data structures.
+          This supported the earlier idea that the file is packed/obfuscated and not friendly to automated string extraction.
         </p>
 
         <img src="images/report2/Screenshot 2026-02-05 133409.png" alt="FLOSS error output">
         <img src="images/report2/Screenshot 2026-02-05 134135.png" alt="FLOSS arguments error">
 
-        <h2>7. PEStudio Strings (Most Were Gibberish)</h2>
+        <h2 id="strings">8. PEStudio Strings and What Stood Out</h2>
         <p>
-          I opened the file in PEStudio and reviewed the strings. Most were unreadable, but near the end there were interesting
-          readable strings related to disk paths and system locations. This can point to disk-level activity.
+          Since FLOSS did not work, I moved to PEStudio’s strings view.
+          Most strings were gibberish, which is common when strings are encrypted or the file is packed.
+        </p>
+        <p>
+          However, some readable strings near the end stood out, such as disk-related paths and system locations.
+          My reasoning here is simple: strings like physical drive paths can point to low-level disk access.
+          That is not common for normal apps, but it is common for destructive malware like wipers.
         </p>
 
         <img src="images/report2/Screenshot 2026-02-05 143110.png" alt="PEStudio strings list">
 
-        <h2>8. Certificate / Signature Info</h2>
+        <h2 id="cert">9. Certificate / Signature Observations</h2>
         <p>
-          PEStudio showed a digital certificate, but it did not verify. Malware sometimes uses stolen or abused certificates
-          to look legitimate.
+          I checked the certificate because malware sometimes uses certificates to look legitimate or bypass basic trust checks.
+          In my results, the certificate existed but the signature did not verify.
+        </p>
+        <p>
+          My conclusion from this is that either the signature is not valid anymore, or the file was changed after signing,
+          or the certificate was abused. I did not treat the certificate as proof of legitimacy.
         </p>
 
         <img src="images/report2/Screenshot 2026-02-05 143131.png" alt="Certificate info">
 
-        <h2>9. Correlating With Public Research (CISA)</h2>
+        <h2 id="cisa">10. Correlating With Public Research (CISA)</h2>
         <p>
-          At this point I was still not fully sure what the malware was doing, so I researched the hash and found a CISA advisory
-          that explains the malware campaign used against Ukraine in 2022.
+          At this point, static analysis strongly suggested packing and possible disk-level behavior,
+          but I still wanted a reliable identification of the malware family.
+          So I looked for public reporting using the hash and found a CISA advisory.
         </p>
         <p>
           CISA Advisory:
@@ -103,14 +166,24 @@
             AA22-057A
           </a>
         </p>
-
-        <h2>10. Final Summary</h2>
         <p>
-          Based on the packed/obfuscated PE structure, broken imports, unreadable strings, and the matching public reporting from CISA,
-          I concluded this sample is part of the destructive malware activity described in the advisory.
+          I used the CISA advisory as a trusted reference because it is an official source and explains the campaign used against Ukraine.
+          The behaviors described in the advisory matched the kind of indicators I saw (packing, abnormal structure, and disk-related hints).
+          This is how I connected my technical findings to a real-world malware report.
         </p>
 
-        <h2>Sources (Tools and Learning Materials)</h2>
+        <h2 id="conclusion">11. Conclusion</h2>
+        <p>
+          My final conclusion is that this sample is heavily packed and uses obfuscation techniques that break or confuse common static tools.
+          The section entropy, broken imports, and unreadable strings all point toward an unpacking stage that would reveal more behavior at runtime.
+        </p>
+        <p>
+          Since my tools could not fully decode the logic statically, I used the hash to find an official CISA advisory.
+          Based on the match between my static indicators and the advisory’s description of malware used against Ukraine in 2022,
+          I concluded that this sample aligns with the destructive malware activity documented in that report.
+        </p>
+
+        <h2 id="sources">12. Sources</h2>
         <ul class="sources">
           <li>
             VirusTotal file page (detection results):
@@ -137,7 +210,8 @@
         </ul>
 
         <p class="top-nav">
-          <a href="index.html">← Back to Home</a>
+          <a href="index.html">← Back to Home</a> |
+          <a href="#toc">Back to TOC ↑</a>
         </p>
 
       </div>
