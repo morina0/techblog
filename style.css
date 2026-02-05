@@ -209,7 +209,7 @@ main {
   color: var(--accent-secondary);
 }
 
-/* Simple link styling inside reports */
+
 .post-content a,
 .top-nav a {
   color: var(--accent-secondary);
@@ -234,4 +234,25 @@ main {
 .sources li {
   margin-bottom: 0.7rem;
 }
+
+.social-linkedin {
+  display: inline-block;
+  margin-top: 1.2rem;
+  padding: 10px 18px;
+  border: 1px solid var(--accent-secondary);
+  color: var(--accent-secondary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  background: rgba(0, 212, 255, 0.05);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.15);
+  transition: all 0.25s ease;
+}
+
+.social-linkedin:hover {
+  background: rgba(0, 212, 255, 0.15);
+  box-shadow: 0 0 18px rgba(0, 212, 255, 0.35);
+  transform: translateY(-2px);
+}
+
 
