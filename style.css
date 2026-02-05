@@ -255,4 +255,14 @@ main {
   transform: translateY(-2px);
 }
 
+code {
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--accent-secondary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 
