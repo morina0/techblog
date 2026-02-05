@@ -171,3 +171,67 @@ main {
     }
 }
 
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .report-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.report-card {
+  display: block;
+  text-decoration: none;
+  padding: 1.4rem;
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  background: rgba(10, 14, 39, 0.35);
+  box-shadow: 0 0 18px rgba(0, 255, 136, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.report-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(0, 255, 136, 0.15);
+}
+
+.report-card h2 {
+  margin: 0 0 0.6rem;
+}
+
+.report-link {
+  display: inline-block;
+  margin-top: 0.8rem;
+  color: var(--accent-secondary);
+}
+
+/* Simple link styling inside reports */
+.post-content a,
+.top-nav a {
+  color: var(--accent-secondary);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(0, 212, 255, 0.6);
+}
+
+.post-content a:hover,
+.top-nav a:hover {
+  border-bottom-style: solid;
+}
+
+.top-nav {
+  margin-top: 1rem;
+}
+
+.sources {
+  margin: 1rem 0 2rem;
+  padding-left: 1.2rem;
+}
+
+.sources li {
+  margin-bottom: 0.7rem;
+}
+
