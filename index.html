@@ -1,140 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Malware Analysis Lab</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malware Analysis Lab - Reports</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <main class="container">
-        <article class="blog-post">
-            <div class="post-header">
-            <h1>Malware Analysis Lab</h1>
-            <h3>Yll Morina</h3>
-            <h3>01/27/2026</h3>
-            <br>
-            <p>This blog will showcase step by step the first assignment for the Reverse Engineering Fundamentals class at RIT Kosovo taught by Prof. Robert Shala.</p>
-            </div>
-            <br>
-<div class="post-content">
-    
-    <h2>Requirements In Short Terms</h2>
-    <p>
-        Build an isolated Malware Analysis Lab with two VMs. A Windows 11 Victim machine and a REMnux Observer machine.
-        The VirtualBox environment must be fully isolated. No NAT, no Bridge, no Internet.
-        Windows 11 must be able to execute malware, believe it is online, and stay clean using snapshots.
-        REMnux must provide fake DNS and HTTP services, traffic logging, and packet capture using INetSim.
-    </p>
+  <main class="container">
+    <article class="blog-post">
+      <div class="post-header">
+        <h1>Malware Analysis Lab</h1>
+        <h3>Yll Morina</h3>
+        <h3>Reverse Engineering Fundamentals</h3>
+        <p>Select a report below.</p>
+      </div>
 
-    <h2>Windows 11 Victim Machine Setup</h2>
-    <p>
-        A Windows 11 VM was created in VirtualBox using the official ISO file.
-    </p>
-    <img src="Images for Report/Screenshot 2026-01-26 103338.png">
-    <p>After installation, all security
-        features were disabled to allow malware execution without interference. Windows Defender real time protection,
-        firewall, proxy settings, and cloud protection were disabled. Additional restrictions were removed using
-        Registry Editor and Local Group Policy Editor to fully neutralize built in defenses.
-    </p>
-    <img src="Images for Report/Screenshot 2026-01-27 001506.png">
-    <img src="Images for Report/Screenshot 2026-01-27 002525.png">
-    <p>
-        The system was kept fully isolated and no Microsoft account or online services were used. A clean snapshot
-        was taken after setup to allow safe rollback after malware execution.
-    </p>
-                
-    <h2>Tools Installed on Windows 11</h2>
-    <p>
-        Multiple malware analysis tools were installed to support both static and dynamic analysis.
-        These included strings and FLOSS for string extraction, PEView and PEBear for PE structure analysis,
-        PEStudio and capa for capability discovery, Cutter and x32 x64dbg for reverse engineering,
-        dnSpyEx for .NET analysis, scdbg for shellcode debugging, Process Hacker for process inspection,
-        Sysinternals tools such as Procmon and TCPView, Wireshark for packet capture, nc ncat for network testing,
-        YARA for rule matching, and UPX referenced for packed samples.
-    </p>
+      <div class="post-content">
+        <div class="report-grid">
+          <a class="report-card" href="report1.html">
+            <h2>Report 1: Isolated Malware Analysis Lab Setup</h2>
+            <p>
+              VirtualBox isolation, Windows 11 victim + REMnux observer, INetSim, static IPs, and verification steps.
+            </p>
+            <span class="report-link">Open Report 1 →</span>
+          </a>
 
-    <img src="Images for Report/Screenshot 2026-01-27 021756.png">
-    <h2>Network Isolation Configuration</h2>
-    <p>
-        After installing all tools, the Windows 11 VM was powered off. In VirtualBox network settings,
-        the adapter was changed to Internal Network and named malware-lab. Promiscuous mode was set to
-        Allow VMs. This ensures communication only between lab machines with no external access.
-    </p>
-
-    <img src="Images for Report/Win11Network.png">
-
-    <h2>REMnux Observer Machine Setup</h2>
-    <p>
-        The REMnux OVA was imported into VirtualBox and named REMnuxObserver. After booting,
-        the system was updated and INetSim was installed and tested using root privileges.
-        INetSim services were verified to ensure DNS and HTTP emulation worked correctly.
-    </p>
-    <img src="Images for Report/REMnuxNetwork.png">  
-    <p>
-        The REMnux VM was then powered off and configured with the same Internal Network name malware-lab
-        and Promiscuous mode set to Allow VMs to match the Windows machine.
-    </p>
-
-              
-                
-
-    <h2>Static IP Address Configuration</h2>
-    <p>
-        After powering on REMnux, the network interface name was identified using ip show link.
-        A static IP address was assigned using the command
-        sudo ip addr add 10.0.0.1/24 dev enp0s3.
-        The IP assignment was verified using ip show.
-    </p>
-    <img src="Images for Report/REMnuxIp.png">
-
-    <p>
-        On Windows 11, Ethernet settings were changed from automatic to manual.
-        IPv4 was configured with IP address 10.0.0.2, subnet mask 255.255.255.0,
-        gateway 10.0.0.1, and DNS 10.0.0.1 to route all traffic through REMnux.
-    </p>
-
-    <img src="Images for Report/Win11Ip.png">
-
-    <h2>INetSim and Connectivity Verification</h2>
-    <p>
-        Both machines were restarted to apply network changes. INetSim was started on REMnux
-        using sudo inetsim. Once services were running, connectivity was tested from Windows
-        by pinging 10.0.0.1. The successful response confirmed proper communication between
-        the victim and observer machines.
-    </p>
-
-    <p>
-        At this stage, the malware lab was fully operational. The environment had no WiFi,
-        no NAT, no external network access, and all traffic from Windows was redirected
-        to REMnux for monitoring and logging.
-    </p>
-
-    <img src="Images for Report/final.png">
-
-    <h2>Conclusion</h2>
-    <p>
-        A complete isolated malware analysis lab was successfully built using VirtualBox,
-        Windows 11, and REMnux. The setup allows safe execution and observation of malware
-        without risk to the host system or external networks.
-    </p>
-</div>
-</article>
-
-
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2026 Yll Morina. All rights reserved.</p>
+          <a class="report-card" href="report2.html">
+            <h2>Report 2: Malware Static Analysis (Ukraine 2022)</h2>
+            <p>
+              Hash verification, PE analysis, entropy, obfuscated imports, FLOSS/PEStudio findings, and CISA correlation.
+            </p>
+            <span class="report-link">Open Report 2 →</span>
+          </a>
         </div>
-    </footer>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2026 Yll Morina. All rights reserved.</p>
+    </div>
+  </footer>
 </body>
 </html>
-
-
-
-
-
-
-
