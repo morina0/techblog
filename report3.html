@@ -3,35 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Report 3 - Simple Malware in C</title>
+  <title>Report 3 - Windows Persistence via Run Registry Key</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-<header class="site-header">
-  <div class="container header-inner">
-    <a class="brand" href="index.html">Yll Morina</a>
-    <nav class="site-nav" aria-label="Primary">
-      <a class="nav-link" href="index.html">Home</a>
-      <a class="nav-link" href="about.html">About</a>
-      <a class="nav-link" href="certifications.html">Certifications</a>
-      <a class="nav-link" href="blogs.html">Blogs</a>
-      <a class="nav-link" href="https://www.linkedin.com/in/yll-morina/" target="_blank" rel="noopener">LinkedIn</a>
-    </nav>
-  </div>
-</header>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">Yll Morina</a>
+      <nav class="site-nav" aria-label="Primary">
+        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link" href="about.html">About</a>
+        <a class="nav-link" href="certifications.html">Certifications</a>
+        <a class="nav-link" href="blogs.html">Blogs</a>
+        <a class="nav-link" href="https://www.linkedin.com/in/yll-morina/" target="_blank" rel="noopener">LinkedIn</a>
+      </nav>
+    </div>
+  </header>
 
   <main class="container">
     <article class="blog-post">
       <div class="post-header">
-        <h1>Report 3: Simple Malware in C</h1>
+        <h1>Report 3: Windows Persistence via Run Registry Key</h1>
         <h3>Yll Morina</h3>
         <h3>02/05/2026</h3>
 
         <p>
-          This report documents a small educational exercise that demonstrates a common Windows persistence mechanism:
-          user-level startup via the Run registry key. The goal was not to build real malware, but to understand the
-          concept, the WinAPI calls involved, and how defenders can detect this behavior.
+          This report documents an educational malware-style implementation of a common Windows persistence mechanism:
+          user-level startup via the Run registry key. The focus is to understand how legitimate Windows startup behavior
+          can be abused, what system state changes are created, which WinAPI calls are involved, and how defenders can
+          recognize and investigate this activity.
         </p>
 
         <p class="top-nav">
@@ -45,68 +46,68 @@
         <ul class="toc">
           <li><a href="#scope">1. Scope and Safety</a></li>
           <li><a href="#lab">2. Lab Environment</a></li>
-          <li><a href="#goal">3. Goal of the Program</a></li>
-          <li><a href="#design">4. Program Design (High-Level)</a></li>
+          <li><a href="#goal">3. Objective</a></li>
+          <li><a href="#design">4. Design Overview</a></li>
           <li><a href="#apis">5. API Summary and Why Each Matters</a></li>
-          <li><a href="#execution">6. What I Did in the Windows 11 VM (Verification Flow)</a></li>
+          <li><a href="#execution">6. What I Verified in the Windows 11 VM</a></li>
           <li><a href="#persistence">7. Why the Run Key Works</a></li>
           <li><a href="#detection">8. Detection and Defensive View</a></li>
-          <li><a href="#cleanup">9. Cleanup</a></li>
+          <li><a href="#cleanup">9. Cleanup and Reverting State</a></li>
           <li><a href="#conclusion">10. Conclusion</a></li>
           <li><a href="#sources">11. Sources</a></li>
         </ul>
 
         <h2 id="scope">1. Scope and Safety</h2>
         <p>
-          This exercise was performed as a controlled classroom-style demo to understand how persistence works on Windows.
-          I ran it only inside my isolated Windows 11 virtual machine environment. The program’s behavior is intentionally
-          simple and observable: it proves execution by showing a message box at logon, and it stores a startup entry under
-          the current user context (no admin privileges required).
+          This work was performed as a controlled classroom-style persistence experiment to understand how Windows startup
+          mechanisms can be manipulated. I ran it only inside an isolated Windows 11 virtual machine environment to ensure
+          the behavior could not impact my host system. The program intentionally keeps its impact minimal and observable:
+          it creates a single user-level startup entry and uses a visible message box as an execution indicator.
         </p>
         <p>
-          I treated this as a defensive learning task. That means I focused on: (1) what the program changes on the system,
-          (2) how Windows triggers it, and (3) how to detect or validate the persistence from a defender perspective.
+          I treated this as a defensive learning task. My goal was not to optimize stealth or evade detection, but to
+          understand: (1) what changes are written to the system, (2) how Windows triggers the behavior at logon,
+          and (3) how analysts can validate and detect this persistence in practice.
         </p>
 
         <h2 id="lab">2. Lab Environment</h2>
         <p>
-          I used my Windows 11 VM as the “victim” machine. I kept the environment isolated because persistence techniques
-          are the exact same mechanisms used by real malware, and I wanted zero risk of affecting my host system.
+          I used a Windows 11 VM as the test system. I kept the environment isolated because persistence techniques are
+          the same operating system mechanisms used by real malware, and I wanted a setup where I could safely observe
+          changes and revert to a known clean state.
         </p>
         <p>
-          In practice, this means the test should happen in a VM with snapshots enabled. If something goes wrong,
-          reverting restores the system back to a known clean state without relying on manual cleanup.
+          The most important lab practice for this kind of exercise is having snapshots available. It allows you to roll
+          back system state (registry + filesystem) quickly and prevents old persistence entries from contaminating future tests.
         </p>
 
-        <h2 id="goal">3. Goal of the Program</h2>
+        <h2 id="goal">3. Objective</h2>
         <p>
-          The program does two things:
+          The objective was to implement and study a common persistence pattern:
+          modifying user-level startup configuration so a program launches automatically at login. The message box is not the
+          main point; it is only a clear signal that the program executed without needing to rely on assumptions.
         </p>
         <ul>
-          <li>Shows a visible pop-up to prove it executed (a MessageBox).</li>
-          <li>Creates a user-level startup entry so the program runs automatically after login.</li>
+          <li>Observable execution indicator: <code>MessageBoxA</code></li>
+          <li>Persistence mechanism: startup entry under the current user Run key</li>
         </ul>
-        <p>
-          The important part for learning is not the pop-up itself, but the persistence step: writing a startup value
-          so Windows loads the program again in the future.
-        </p>
 
-        <h2 id="design">4. Program Design (High-Level)</h2>
+        <h2 id="design">4. Design Overview</h2>
         <p>
-          Since I am not a C expert, I approached this by first learning the basics of C syntax and then mapping the
-          Windows behavior to specific WinAPI calls. My program logic is straightforward:
+          Because I did not start with a strong C background, I approached this by learning core C syntax first, then mapping
+          the behavior I wanted into specific WinAPI calls. The program’s logic is simple by design so the persistence mechanism
+          remains the main focus:
         </p>
         <ol>
-          <li>Get the full path of the executable currently running.</li>
-          <li>Open the user’s Run key with permission to set a value.</li>
-          <li>Write the executable path as a string value.</li>
-          <li>Close the registry handle cleanly.</li>
-          <li>Display a message box so I can visually confirm execution.</li>
+          <li>Determine the full path of the running executable.</li>
+          <li>Open the current user’s startup registry location with write permission.</li>
+          <li>Write the executable path as a string value so Windows can launch it at logon.</li>
+          <li>Close handles properly to avoid leaving artifacts like open registry handles.</li>
+          <li>Use a message box to prove execution when the program runs.</li>
         </ol>
         <p>
-          The reason I used a “current user” persistence location is that it demonstrates a realistic technique without
-          requiring administrative privileges. That constraint matters because many real-world persistence methods try to
-          stay in user-land to avoid UAC prompts or elevated permissions.
+          I intentionally stayed in the current user context because it demonstrates a realistic abuse path without requiring
+          administrator rights. That matters in real scenarios, since many threats try to persist without triggering privilege prompts.
         </p>
 
         <h2 id="apis">5. API Summary and Why Each Matters</h2>
@@ -114,103 +115,97 @@
           These are the core APIs used by the program and the role each one plays:
         </p>
 
-        <pre><code>GetModuleFileNameA  -> obtains the full path of the running executable
-RegOpenKeyExA       -> opens the user’s Run key with write access
-RegSetValueExA      -> writes a REG_SZ string value that points to the executable path
-RegCloseKey         -> closes the registry handle (avoids resource leaks)
-MessageBoxA         -> shows a visible popup as proof the program executed</code></pre>
+        <pre><code>GetModuleFileNameA  -> retrieves the full path of the running executable
+RegOpenKeyExA       -> opens the current user startup key with write access
+RegSetValueExA      -> writes a REG_SZ value that points to the executable
+RegCloseKey         -> closes the registry handle cleanly
+MessageBoxA         -> provides an obvious execution indicator</code></pre>
 
         <p>
-          The important security concept is that registry write APIs are often monitored by EDR solutions, because they are
-          a common way malware establishes persistence. Even if the program is “benign,” the behavior is similar to what
-          defenders look for.
+          From a security perspective, registry write activity to common startup locations is widely monitored.
+          The behavior is significant because persistence is not about a single execution — it is about shaping the system so the
+          program runs again automatically in the future.
         </p>
 
-        <h2 id="execution">6. What I Did in the Windows 11 VM (Verification Flow)</h2>
+        <h2 id="execution">6. What I Verified in the Windows 11 VM</h2>
         <p>
-          I kept my testing process very simple and focused on verification:
+          My testing workflow focused on confirming system changes and trigger behavior rather than just “running a program once.”
+          The key validations were:
         </p>
         <ul>
           <li>
-            I compiled the program inside the VM using a standard Windows C toolchain. The reason I compiled inside the VM
-            is to keep the entire workflow contained and reproducible.
+            The program executed correctly and was able to determine its own full path (important for writing a valid startup entry).
           </li>
           <li>
-            I executed the compiled binary once to confirm it runs without errors and to confirm it can locate its own path.
+            A new startup value existed after execution (proof that the system state changed, not just the program output).
           </li>
           <li>
-            I validated that the startup value exists after execution by checking the Run key entry from the system’s
-            built-in tools (registry viewer / command-line query). I did this step because persistence is not “real” unless
-            the system state actually changed.
-          </li>
-          <li>
-            Finally, I logged out and logged back in (or rebooted) to test the trigger condition. The expected result is
-            seeing the same message box again after login, which confirms the program launched automatically.
+            After a fresh logon session, the program executed automatically again (proof the persistence trigger worked as expected).
           </li>
         </ul>
 
         <p>
-          For my report evidence, the most important screenshots are:
+          For report evidence, the most meaningful screenshots are:
         </p>
         <ul>
-          <li>The program’s first execution (showing the message box).</li>
-          <li>The registry entry visible in the Run key after it is created.</li>
-          <li>The message box appearing again after login (proving persistence actually triggered).</li>
+          <li>Initial execution indicator (message box).</li>
+          <li>Startup value visible in the registry (showing exactly what was added).</li>
+          <li>Execution indicator after logon (confirming automatic launch).</li>
         </ul>
 
         <h2 id="persistence">7. Why the Run Key Works</h2>
         <p>
-          The Run key works because Windows processes specific startup locations during user logon. The key idea is simple:
-          the system reads a list of configured programs and launches them automatically when the user signs in.
+          The Run key works because Windows processes specific startup locations during user logon. The system reads configured
+          values and launches them automatically. This is normal behavior used for legitimate software — but it can be abused by
+          unwanted or malicious programs to remain present across sessions.
         </p>
         <p>
-          Using the current user context is also meaningful:
+          Using the current user context is particularly relevant because:
         </p>
         <ul>
-          <li>It typically does not require administrative permissions.</li>
-          <li>It is easy for an attacker to set, which is why defenders routinely monitor it.</li>
-          <li>It is reliable across reboots and logon sessions unless removed.</li>
+          <li>It usually does not require administrative permissions.</li>
+          <li>It is straightforward to modify, which is why it is commonly abused.</li>
+          <li>It persists across reboots and logon sessions until removed.</li>
         </ul>
 
         <h2 id="detection">8. Detection and Defensive View</h2>
         <p>
-          From a defender perspective, this technique is not “advanced,” but it is still very common because it is easy and
-          effective. There are a few straightforward ways to detect or investigate it:
+          From a defender perspective, this technique is common because it is easy and reliable. The most useful way to think
+          about it is not “a registry key exists,” but “a process wrote itself into an auto-start location.”
         </p>
         <ul>
-          <li><strong>Autoruns (Sysinternals):</strong> quickly lists startup persistence locations in one place.</li>
-          <li><strong>Process Monitor (Procmon):</strong> can reveal registry write activity if you capture the event.</li>
-          <li><strong>EDR / AV telemetry:</strong> often flags unsigned binaries writing to common startup keys.</li>
-          <li><strong>Forensics / baseline comparison:</strong> checking Run key entries against a known-good baseline.</li>
+          <li><strong>Autoruns (Sysinternals):</strong> quickly lists common persistence locations in one interface.</li>
+          <li><strong>Process Monitor (Procmon):</strong> can show registry write events when captured during execution.</li>
+          <li><strong>EDR / AV telemetry:</strong> often flags unsigned binaries modifying common startup keys.</li>
+          <li><strong>Baseline comparison:</strong> compare startup entries against a known-good machine snapshot.</li>
         </ul>
         <p>
-          What matters is the behavior: a binary writing itself into an auto-start location. Even a simple demo program
-          can look suspicious if it behaves like persistence-focused malware.
+          Even small programs can be suspicious if they exhibit persistence-focused behavior commonly associated with malware.
+          Understanding this is critical because real threats often rely on legitimate Windows mechanisms instead of exploiting vulnerabilities.
         </p>
 
-        <h2 id="cleanup">9. Cleanup</h2>
+        <h2 id="cleanup">9. Cleanup and Reverting State</h2>
         <p>
-          After testing, I removed the startup entry so the program would not run again. I also removed the compiled binary
-          from the VM. In a classroom lab, cleanup matters because persistence exercises can quickly become confusing if old
-          entries remain and multiple test binaries start executing at login.
+          After testing, I removed the startup entry so the program would not execute again at logon. In lab environments,
+          cleanup matters because leftover persistence can easily cause confusion in later experiments (multiple binaries triggering at login,
+          stale entries pointing to deleted files, and false conclusions during analysis).
         </p>
         <p>
-          The cleanest method in a VM environment is to revert to a snapshot taken before the persistence step. That returns
-          the registry and filesystem to a known clean state in one action.
+          In a VM environment, the cleanest approach is reverting to a snapshot taken before the persistence step. That restores
+          the registry and filesystem to a known clean baseline and keeps the environment consistent for future work.
         </p>
 
         <h2 id="conclusion">10. Conclusion</h2>
         <p>
-          This exercise helped me understand Windows persistence in a concrete way: not as an abstract “malware trick,” but
-          as a set of normal operating system behaviors that can be abused. By mapping the technique to specific WinAPI
-          calls and then verifying the system changes, I learned what persistence looks like both from an attacker’s view
-          (how it is established) and a defender’s view (how it is validated and detected).
+          This exercise made Windows persistence feel concrete instead of theoretical. Rather than thinking of persistence as a “malware trick,”
+          I learned to see it as normal operating system behavior that can be abused. By mapping the technique to specific WinAPI calls and
+          validating the resulting system changes, I practiced how to reason about persistence from both sides: how it is established, how it
+          triggers, and what artifacts it leaves behind for defenders to find.
         </p>
 
         <h2 id="sources">11. Sources</h2>
         <p>
-          I used the following sources to learn C basics (beginner to practical), and to understand Windows APIs and
-          persistence as a concept:
+          I used the following sources to build foundational C knowledge and to understand Windows APIs and persistence concepts:
         </p>
 
         <ul>
@@ -223,15 +218,21 @@ MessageBoxA         -> shows a visible popup as proof the program executed</code
             <a href="https://learn.microsoft.com/en-us/cpp/c-language/c-language-reference?view=msvc-170" target="_blank" rel="noopener">link</a>
           </li>
           <li>
+            CS50x (Harvard): Introduction to Computer Science:
+            <a href="https://cs50.harvard.edu/x/" target="_blank" rel="noopener">link</a>
+          </li>
+          <li>
+            Harvard Online (official CS50 overview page):
+            <a href="https://pll.harvard.edu/course/cs50-introduction-computer-science" target="_blank" rel="noopener">link</a>
+          </li>
+          <li>
             learn-c.org: Interactive C tutorial:
             <a href="https://www.learn-c.org/" target="_blank" rel="noopener">link</a>
           </li>
-
           <li>
             Microsoft Docs: PlaySound (Win32 multimedia) reference:
             <a href="https://learn.microsoft.com/en-us/windows/win32/api/mmsystem/nf-mmsystem-playsounda" target="_blank" rel="noopener">link</a>
           </li>
-
           <li>
             CyberArk: Persistence techniques overview:
             <a href="https://www.cyberark.com/resources/threat-research-blog/persistence-techniques-that-persist" target="_blank" rel="noopener">link</a>
